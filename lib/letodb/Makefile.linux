@@ -1,0 +1,86 @@
+# $Id$
+# Building of librddleto.a
+
+# uncomment this line if you want to build letodb with xharbour
+#XHARBOUR = yes
+
+ifeq ($(HB_ROOT),)
+HRB_DIR = ..
+else
+HRB_DIR = $(HB_ROOT)
+endif
+
+ifeq ($(XHARBOUR),)
+HRB_LIBS= -lhbvmmt -lhbrtl -lhbcpage -lhblang -lhbrdd -lhbrtl -lhbvm -lhbmacro -lhbpp -lgtstd -lrddntx -lrddcdx -lrddfpt -lhbcommon -lhbsix
+else
+HRB_LIBS= -lvm -lrtl -lcodepage -llang -lrdd -lrtl -lvm -lmacro -lpp -lgtstd -ldbfntx -ldbfcdx -ldbffpt -lcommon -lhbsix -lpcrepos
+endif
+
+LIB_DIR = $(HRB_DIR)/lib
+INC_DIR = include
+OBJ_DIR = obj/linux
+LETO_LIB_DIR = lib
+LETO_BIN_DIR = bin
+
+SERVER_DIR=source/server
+CLIENT_DIR=source/client
+COMMON_DIR=source/common
+
+CFLAGS = -Wall -O3
+
+vpath %.a $(LIB_DIR)
+vpath %.o $(OBJ_DIR)
+vpath %.c $(OBJ_DIR):$(SERVER_DIR):$(CLIENT_DIR):$(COMMON_DIR)
+vpath %.prg $(SERVER_DIR):$(CLIENT_DIR):$(COMMON_DIR)
+
+$(OBJ_DIR)/%.c : %.prg
+	$(HRB_DIR)/bin/harbour -n -w -es2 -q0 -d__LINUX__ -d__LINUX_DAEMON__ -I$(HRB_DIR)/include -I$(INC_DIR) -o$@ $<
+
+%.o : %.c
+	gcc $(CFLAGS) -c -I$(INC_DIR) -I$(HRB_DIR)/include -o $@ $<
+
+$(OBJ_DIR)/%.o : %.c
+	gcc $(CFLAGS) -c -I$(INC_DIR) -I$(HRB_DIR)/include -o $@ $<
+
+
+$(LETO_LIB_DIR)/%.a ::
+	ar rc $@ $^
+
+all: \
+   $(LETO_LIB_DIR)/librddleto.a \
+   $(LETO_LIB_DIR)/libleto.a \
+   $(LETO_BIN_DIR)/letodb
+
+$(LETO_LIB_DIR)/librddleto.a : \
+   $(OBJ_DIR)/letocl.o \
+   $(OBJ_DIR)/leto1.o \
+   $(OBJ_DIR)/letomgmn.o \
+   $(OBJ_DIR)/hbip.o \
+   $(OBJ_DIR)/common_c.o \
+   $(OBJ_DIR)/blowfish.o \
+   $(OBJ_DIR)/rddsys.o
+
+$(LETO_LIB_DIR)/libleto.a : \
+   $(OBJ_DIR)/letocl.o \
+   $(OBJ_DIR)/hbip.o \
+   $(OBJ_DIR)/common_c.o \
+   $(OBJ_DIR)/blowfish.o
+
+$(LETO_BIN_DIR)/letodb : \
+   $(OBJ_DIR)/server.o \
+   $(OBJ_DIR)/common.o \
+   $(OBJ_DIR)/hbip.o \
+   $(OBJ_DIR)/common_c.o \
+   $(OBJ_DIR)/blowfish.o \
+   $(OBJ_DIR)/leto_2.o \
+   $(OBJ_DIR)/letofunc.o \
+   $(OBJ_DIR)/letolist.o \
+   $(OBJ_DIR)/letoacc.o \
+   $(OBJ_DIR)/letovars.o \
+   $(OBJ_DIR)/leto_lnx.o \
+   $(OBJ_DIR)/errint.o \
+   $(OBJ_DIR)/errorsys.o
+	gcc $^ -o$(LETO_BIN_DIR)/letodb -L$(LIB_DIR) -Wl,--start-group $(HRB_LIBS) -Wl,--end-group -lm -lpthread -lrt
+
+clean:
+	-(rm -fR obj/linux/* lib/* bin/* )

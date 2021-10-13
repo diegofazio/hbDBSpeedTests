@@ -1,0 +1,28 @@
+#
+# $Id$
+#
+
+#-env:__BM=yes
+
+# static lib
+-hblib
+# shared lib, dll or so
+#-hbdynvm
+#-shared
+
+-inc
+-olib/rddleto
+-iinclude
+-n -w -q0 -es2
+{__BM}-cflag=-D__BM
+
+source/client/letocl.c
+source/client/leto1.c
+source/client/letomgmn.c
+source/client/rddsys.prg
+{__BM}source/client/letobmcl.prg
+
+source/common/blowfish.c
+source/common/common_c.c
+source/common/hbip.c
+{__BM}source/common/letoserv.prg

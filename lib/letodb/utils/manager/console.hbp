@@ -1,0 +1,15 @@
+#
+# $Id$
+#
+
+-inc
+-o../../bin/${hb_plat}/${hb_comp}/console
+-i../../include
+-n -w -q0 -es2
+#-warn=max
+-mt
+
+{bcc}-l../../lib/${hb_plat}/${hb_comp}/rddleto
+{mingw|mingw64}-l../../lib/${hb_plat}/${hb_comp}/librddleto.a
+
+console.prg

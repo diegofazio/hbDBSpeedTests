@@ -1,0 +1,13 @@
+#
+# $Id$
+#
+
+-inc
+
+-l../../lib/librddleto.a
+-i../../include
+-oletobackup
+-w2
+
+letobackup.prg
+../../source/common/common.prg
