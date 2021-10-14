@@ -8,13 +8,14 @@ Harbour DB speed test comparation - Registers Count: 821051
 
 ### Dbf configuration
 
-1) unpack /data/dbf/db.zip
+1) unpack /data/dbf/db.zip to any folder. Do not forget to set that folder in .prg tests!!
 
 ### LetoDB configuration
 
-1) /data/letodb.ini <- Set the "Datapath" with your full path to dbf folder. FIRST OF ALL!!!!
-2) /data/letodb.exe install <- Install letodb Service
-3) /data/letodb.exe start <- Start letodb Service(Check Windows Services if started)
-4) /data/letodb.exe stop <- Stop letodb Service
+1) unpack /data/dbf/db.zip to any folder(Set Datapath - See step 2). 
+2) /data/letodb.ini <- Set the "Datapath" with your full path to dbf folder. FIRST OF ALL!!!!
+3) /data/letodb.exe install <- Install letodb Service
+4) /data/letodb.exe start <- Start letodb Service(Check Windows Services if started)
 
+/data/letodb.exe stop <- Stop letodb Service
 /data/letodb.exe uninstall <- Uninstall letodb Service
