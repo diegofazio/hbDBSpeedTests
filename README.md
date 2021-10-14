@@ -1,5 +1,5 @@
-# hbDBTest
-Harbour DB speed test comparison - Registers Count: 821051
+# hbDBSpeedTests
+Harbour DB speed tests comparison - Registers Count: 821051
 
 ### MySql configuration( 1 or 2 ) 
 
