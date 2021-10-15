@@ -23,7 +23,7 @@ Harbour DB speed tests comparison - Registers Count: 821051
 ### Server specifications 
 
 - Windows 10 x64 - i7-7400 8gb Ram - SSD 480gb
-- mysql  Ver 15.1 Distrib 10.4.11-MariaDB, for Win64 (AMD64)
+- mysql  Ver 15.1 Distrib 10.4.11-MariaDB, for Win64 (AMD64) via https://github.com/carles9000/wdo
 - LetoDB x64 build. 2.17-b3 http://www.kresin.ru/en/letodb.html
 
 
