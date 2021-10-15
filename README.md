@@ -19,3 +19,27 @@ Harbour DB speed tests comparison - Registers Count: 821051
 
 /data/letodb.exe stop <- Stop letodb Service
 /data/letodb.exe uninstall <- Uninstall letodb Service
+
+### Server specifications 
+
+- Windows 10 x64 - i7-7400 8gb Ram - SSD 480gb
+- mysql  Ver 15.1 Distrib 10.4.11-MariaDB, for Win64 (AMD64)
+- LetoDB x64 build. 2.17-b3 http://www.kresin.ru/en/letodb.html
+
+
+## LOCALHOST TEST( in milliseconds )
+
+### Connection time to db
+| DBF    | LetoDB | Mysql  |
+| ------ | ------ | ------ |
+|    0   |    3   |   17   |
+
+### Test1 - Simple record count with one search criteria - Result: 594060 regs
+| DBF    | LetoDB | Mysql  |
+| ------ | ------ | ------ |
+|  246   |  467   |  152   |
+
+
+
+
+
