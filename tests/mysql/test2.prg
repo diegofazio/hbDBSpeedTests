@@ -5,7 +5,7 @@ FUNCTION Main()
    hb_SetEnv( 'WDO_PATH_MYSQL', "c:/xampp/apache/bin/" )
 
    ? "Connecting MySQL..."
-
+   a =  hb_MilliSeconds()
    o := WDO():Rdbms( 'MYSQL', "localhost", "harbour", "", "harbourdb", 3306 )
 
    IF !o:lConnect
@@ -15,7 +15,7 @@ FUNCTION Main()
 
    ENDIF
 
-   ?? 'OK'
+   ?? 'OK ', hb_MilliSeconds() - a, 'ms' 
 
    ? "Getting data..."
    a =  hb_MilliSeconds()

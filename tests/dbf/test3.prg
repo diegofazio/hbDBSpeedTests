@@ -8,13 +8,19 @@ FUNCTION Main()
    LOCAL dHasta := 0d20041231
    LOCAL hRes := { => }
    LOCAL recordset := {}
+   LOCAL a
 
    ? "Connecting DBF..."
-
+   a =  hb_MilliSeconds()
 
    dbSelectArea( 1 )
    dbUseArea( .F., "DBFCDX", cPathData + 'db.dbf',, .T. )
-   ?? 'OK'
+   
+   if neterr()
+      ?? "Error open DBF"
+   endif
+   
+   ?? 'OK ', hb_MilliSeconds() - a, 'ms' 
    ? "Getting data..."
    a =  hb_MilliSeconds()
 
