@@ -1,6 +1,6 @@
 /*	---------------------------------------------------------
 	File.......: rdbms_mysql.prg
-	Description: Conexión a Bases de Datos MySql 
+	Description: Conexiï¿½n a Bases de Datos MySql 
 	Author.....: Carles Aubia Floresvi
 	Date:......: 26/07/2019
 	--------------------------------------------------------- */
@@ -254,7 +254,8 @@ METHOD LoadStruct( hRes ) CLASS RDBMS_MySql
 	  
 RETU NIL
 
-METHOD Fetch( hRes ) CLASS RDBMS_MySql
+//original
+/*METHOD Fetch( hRes ) CLASS RDBMS_MySql
 
 	LOCAL hRow
 	LOCAL aReg
@@ -272,7 +273,27 @@ METHOD Fetch( hRes ) CLASS RDBMS_MySql
 	
 	//::mysql_free_result( hRes )
 
-RETU aReg
+RETU aReg*/
+
+//modified
+METHOD Fetch( hRes ) CLASS RDBMS_MySql
+
+   LOCAL hRow
+   LOCAL aReg
+   LOCAL m
+   LOCAL f
+
+   IF ( hRow := ::mysql_fetch_row( hRes ) ) != 0
+      f := ::FCount( hRes )
+      aReg := Array( f )
+      FOR m = 1 TO f
+         aReg[ m ] := PtrToStr( hRow, m - 1 )
+      NEXT
+   ENDIF
+   // ::mysql_free_result( hRes )
+
+RETURN aReg
+
 
 
 METHOD Fetch_Assoc( hRes ) CLASS RDBMS_MySql
