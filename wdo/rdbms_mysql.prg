@@ -11,7 +11,7 @@
    #xcommand FINALLY => ALWAYS
    #xtranslate Throw( <oErr> ) => ( Eval( ErrorBlock(), <oErr> ), Break( <oErr> )
 
-#define VERSION_RDBMS_MYSQL				'0.1c'
+#define VERSION_RDBMS_MYSQL				'WDO 1.0g'
 #define HB_VERSION_BITWIDTH  				17
 #define NULL  								0  
 
@@ -23,15 +23,23 @@ CLASS RDBMS_MySql FROM RDBMS
 	DATA hConnection
 	
 	DATA lConnect								INIT .F.
+	DATA lLog									INIT .F.
 	DATA nAffected_Rows						INIT 0
 	DATA cError 								INIT ''
 	DATA aFields 								INIT {}
 	DATA aLog 									INIT {}
-	DATA bError									INIT {|cError| qOut ( cError ) }
+	DATA bError									INIT {|cError| AP_RPuts( '<br>' + cError ), .t. }
+	DATA nFields								INIT 0
+	DATA nSysCallConv
+	DATA nSysLong
 	
 	METHOD New() 								CONSTRUCTOR
 		
 	METHOD Query( cSql )	
+	
+	METHOD Prepare( hRow )
+	METHOD Escape( hRow )
+	
 	METHOD Row_Count()	
 	METHOD Last_Insert_Id()	
 	
@@ -63,16 +71,19 @@ CLASS RDBMS_MySql FROM RDBMS
 	METHOD mysql_real_escape_string_quote( cQuery )	
 
 	
-	METHOD Version()							INLINE VERSION_RDBMS_MYSQL
-
-		
+	METHOD Version()							INLINE VERSION_RDBMS_MYSQL		
+	
+	METHOD d()
 	
 	DESTRUCTOR  Exit()
 					
 
 ENDCLASS
 
-METHOD New( cServer, cUsername, cPassword, cDatabase, nPort, cType ) CLASS RDBMS_MySql
+METHOD New( cServer, cUsername, cPassword, cDatabase, nPort, cType, lLog, bError ) CLASS RDBMS_MySql
+
+	local cDll ,lAjax
+	local nTry := 0
 
 	hb_default( @cServer, '' )
 	hb_default( @cUserName, '' )
@@ -80,40 +91,84 @@ METHOD New( cServer, cUsername, cPassword, cDatabase, nPort, cType ) CLASS RDBMS
 	hb_default( @cDatabase, '' )
 	hb_default( @nPort, 3306 )
 	hb_default( @cType, 'MYSQL' )
+	hb_default( @lLog, .F. )
 	
+
+	if valtype( bError ) == 'B'	
+		::bError := bError
+	else
+		::bError := {|cError| AP_RPuts( '<br>' + cError ), .t. }
+	endif
+		
 	::cServer		:= cServer
 	::cUserName	:= cUserName
 	::cPassword 	:= cPassword
 	::cDatabase 	:= cDatabase
 	::nPort 		:= nPort	
+	::lLog 			:= lLog 
+
+	
+	if( ::lLog, ::d( 'WDO log activated' ), nil )	
+	
+	lAjax := lower( AP_GetEnv('HTTP_X_REQUESTED_WITH') ) == 'xmlhttprequest'
+	
+	if( ::lLog, ::d( if(lAjax, 'AJAX Yes', 'AJAX No' ) ), nil )		
 	
 	//	Cargamos lib mysql
 	
 		IF cType == 'MYSQL'
-			::pLib 	:= hb_LibLoad( hb_SysMySQL() )	
+			cDll 	:= hb_SysMySQL() 
 		ELSE
-			::pLib 	:= hb_LibLoad( hb_SysMariaDb() )	
-		ENDIF
+			cDll 	:= hb_SysMariaDb() 
+		ENDIF	
+	
+		::pLib 	:= hb_LibLoad( cDll )	
 
 		If ValType( ::pLib ) <> "P" 
 			::cError := "Error (MySQL library not found)" 
 			
+			if( ::lLog, ::d( ::cError + ' ' + cDll ), nil )
+			
 			IF Valtype( ::bError ) == 'B'
-				Eval( ::bError, ::cError )
+				if Eval( ::bError, ::cError )
+					quit
+				endif
 			ENDIF
 			
 			RETU Self
 		ENDIF
+		
+	//	Inicializamos Variables 
+	
+		::nSysCallConv 	:= hb_SysCallConv()
+		::nSysLong 		:= hb_SysLong()
+
 	
 	//	Inicializamos mysql
-
-		::hMySQL = ::mysql_init()
 	
-		IF ::hMySQL = 0 
-			::cError := "hMySQL = " + Str( ::hMySQL ) + " (MySQL library failed to initialize)"
+		
+		::hMySQL = ::mysql_init()
+
+		while ::hMySql == 0 .and. nTry < 3
+		
+			nTry++
+			if( ::lLog, ::d( 'MySQL library failed to initialize. Try: ' + str(nTry)), nil )
+			inkey(0.1)	
+			::hMySQL = ::mysql_init()			
 			
+		end 
+		
+	
+		IF ::hMySQL == 0 
+			::cError := "hMySQL = 0 (MySQL library failed to initialize)"
+
 			IF Valtype( ::bError ) == 'B'
-				Eval( ::bError, ::cError )
+			
+				if( ::lLog, ::d( ::cError ), nil )
+				
+				if Eval( ::bError, ::cError )
+					quit
+				endif 
 			ENDIF			
 			
 			RETU Self
@@ -132,7 +187,12 @@ METHOD New( cServer, cUsername, cPassword, cDatabase, nPort, cType ) CLASS RDBMS
 			::cError := "Connection = (Failed connection) " + ::mysql_error()
 			
 			IF Valtype( ::bError ) == 'B'
-				Eval( ::bError, ::cError )
+			
+				if( ::lLog, ::d( ::cError ), nil )
+				
+				if Eval( ::bError, ::cError )					
+					quit
+				endif 
 			ENDIF			
 			
 			RETU Self
@@ -142,32 +202,99 @@ METHOD New( cServer, cUsername, cPassword, cDatabase, nPort, cType ) CLASS RDBMS
 		
 RETU SELF
 
+/*	Ejecutamos un hb_addslashes sobre las variables a salvar: 
+	l'aliga -> l\'aliga
+	Hello "World" -> Hello \"Wold\"	
+*/
+METHOD Prepare( hRow ) CLASS RDBMS_MySql
+	
+	local n, aPair, nLen 
+	local cType := valtype( hRow )
+	
+	do case 
+		case cType == 'H'
+		
+			nLen := len( hRow )
+	
+			for n := 1 to nLen 
+			
+				aPair := HB_HPairAt( hRow, n )
+				
+				if valtype( aPair[2] ) == 'C' .or. valtype( aPair[2] ) == 'M' 								
+					hRow[ aPair[1] ] := hb_addslashes( aPair[2] )
+				endif
+
+			next 
+			
+		case cType == 'A'
+	
+			nLen := len( hRow )
+			
+			for n := 1 to nLen 							
+				
+				if valtype(  hRow[ n ] ) == 'C' .or. valtype(  hRow[ n ] ) == 'M' 								
+					hRow[ n ] := hb_addslashes( hRow[ n ] )
+				endif
+
+			next 	
+
+		case cType == 'C'								
+			
+ 
+			if valtype(  hRow ) == 'C' .or. valtype( hRow ) == 'M' 								
+				hRow := hb_addslashes( hRow )					
+			endif
+			
+	endcase 
+
+retu hRow 
+
+
+METHOD Escape( hRow ) CLASS RDBMS_MySql
+/*	
+	local n, aPair, nLen := len( hRow )
+	
+	for n := 1 to nLen 
+	
+		aPair := HB_HPairAt( hRow, n )
+		
+		hRow[ aPair[1] ] := //hb_addslashes( aPair[2] )
+
+	next 
+*/	
+
+retu hRow 
+
+
+
+
 METHOD Query( cQuery ) CLASS RDBMS_MySql
 
 	LOCAL nRetVal
 	LOCAL hRes			:= 0
-	local cSql 		:= ''
-	
+	local cSql 		:= ''	
 
     IF ::hConnection == 0
 		RETU NIL
 	ENDIF	
 
-	cSql := StrTran( cQuery, "'", "\'" )  
+	//cSql := StrTran( cQuery, "'", "\'" )  
 
-
-    nRetVal := ::mysql_query( cQuery )
+	if ( ::lLog	, ::d( cQuery ), nil )	
 	
+	::nFields 	:= 0		
+	
+    nRetVal 	:= ::mysql_query( cQuery )	
 
 	IF nRetVal == 0 
-
 		
 		hRes = ::mysql_store_result()
 
 
 		IF hRes != 0					//	Si Update/Delete hRes == 0
-
-			::LoadStruct( hRes )
+	
+			::LoadStruct( hRes )						
+			
 		ENDIF
 
 		//::Row_Count()			
@@ -222,9 +349,11 @@ METHOD LoadStruct( hRes ) CLASS RDBMS_MySql
 
 	LOCAL n, hField	
      
-    ::aFields = Array( ::FCount( hRes ) )
+    ::nFields := ::FCount( hRes ) 
+    ::aFields := Array( ::nFields )
 	
-    FOR n = 1 to Len( ::aFields )
+	
+    FOR n = 1 to ::nFields
 	
         hField := ::mysql_fetch_field( hRes )
 		
@@ -254,90 +383,118 @@ METHOD LoadStruct( hRes ) CLASS RDBMS_MySql
 	  
 RETU NIL
 
-//original
-/*METHOD Fetch( hRes ) CLASS RDBMS_MySql
+METHOD Fetch( hRes, aNoEscape ) CLASS RDBMS_MySql
 
 	LOCAL hRow
 	LOCAL aReg
-	LOCAL m
+	LOCAL m, f
+	
+	hb_default( @aNoEscape, {} )
 
-	if ( hRow := ::mysql_fetch_row( hRes ) ) != 0
+	if ( hRow := ::mysql_fetch_row( hRes ) ) != 0	
 	
-		aReg := array( ::FCount( hRes ) )
+		aReg 	:= array( ::nFields )		
 	
-		for m = 1 to ::FCount( hRes )
-		   aReg[ m ] := PtrToStr( hRow, m - 1 )
-		next
+		if len( aNoEscape ) == 0 
+		
+			for m = 1 to ::nFields	
+				aReg[ m ] := hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )				
+			next			
+		
+		else 
+		
+			for m = 1 to ::nFields
+			
+				if Ascan( aNoEscape, ::aFields[m][1] ) > 0
+					aReg[ m ] := PtrToStr( hRow, m - 1 ) 
+				else
+					aReg[ m ] := hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )
+				endif
+			next
+		
+		endif
 		
 	endif
-	
-	//::mysql_free_result( hRes )
 
-RETU aReg*/
+	//if hRes > 0			//	Casca al liberar la memoria !!!!!  IMPORTANT
+	//	::mysql_free_result( hRes )		
+	//endif
 
-//modified
-METHOD Fetch( hRes ) CLASS RDBMS_MySql
-
-   LOCAL hRow
-   LOCAL aReg
-   LOCAL m
-   LOCAL f
-
-   IF ( hRow := ::mysql_fetch_row( hRes ) ) != 0
-      f := ::FCount( hRes )
-      aReg := Array( f )
-      FOR m = 1 TO f
-         aReg[ m ] := PtrToStr( hRow, m - 1 )
-      NEXT
-   ENDIF
-   // ::mysql_free_result( hRes )
-
-RETURN aReg
+RETU aReg
 
 
-
-METHOD Fetch_Assoc( hRes ) CLASS RDBMS_MySql
+METHOD Fetch_Assoc( hRes, aNoEscape ) CLASS RDBMS_MySql
 
 	LOCAL hRow
 	LOCAL hReg		:= {=>}
-	LOCAL m
-
+	LOCAL m, f 
+	
+	hb_default( @aNoEscape, {} )
+	
 	if ( hRow := ::mysql_fetch_row( hRes ) ) != 0
 	
-		for m = 1 to ::FCount( hRes )
-		   hReg[ ::aFields[m][1] ] := PtrToStr( hRow, m - 1 )
-		next
+		//f := ::FCount( hRes )
+		
+		if len( aNoEscape ) == 0 	
+
+			for m = 1 to ::nFields	
+				
+				hReg[ ::aFields[m][1] ] :=  hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )
+			
+			next				
+
+		else 
+			
+			for m = 1 to ::nFields
+			
+				if Ascan( aNoEscape, ::aFields[m][1]  ) > 0		
+					hReg[ ::aFields[m][1] ] :=  PtrToStr( hRow, m - 1 ) 
+				else
+					hReg[ ::aFields[m][1] ] :=  hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )
+				endif
+			
+			next
+			
+		endif
+			
 		
 	endif
 	
-	//::mysql_free_result( hRes )
+	//if hRes > 0	//	Casca al liberar la memoria !!!!!  IMPORTANT
+	//	::mysql_free_result( hRes )		
+	//endif
 
 RETU hReg
 
-METHOD FetchAll( hRes, lAssociative ) CLASS RDBMS_MySql
+METHOD FetchAll( hRes, lAssociative, aNoEscape ) CLASS RDBMS_MySql
 
 	LOCAL oRs
 	LOCAL aData := {}
 	
 	__defaultNIL( @lAssociative, .f. )
+	__defaultNIL( @aNoEscape, {} )
+
+
 	
 	IF lAssociative 
 	
-		WHILE ( !empty( oRs := ::Fetch_Assoc( hRes ) ) )
-		
+		WHILE ( !empty( oRs := ::Fetch_Assoc( hRes, aNoEscape ) ) )
+	
 			Aadd( aData, oRs )
 		
 		END
-		
+	
+				
 	ELSE
 	
-		WHILE ( !empty( oRs := ::Fetch( hRes ) ) )
+		WHILE ( !empty( oRs := ::Fetch( hRes, aNoEscape  ) ) )
 		
 			Aadd( aData, oRs )
 			
 		END
 		
 	ENDIF
+
 	
 	
 RETU aData
@@ -347,27 +504,27 @@ RETU aData
 
 METHOD mysql_num_rows( hRes ) CLASS RDBMS_MySql	
 
-return hb_DynCall( { "mysql_num_rows", ::pLib, hb_bitOr( hb_SysLong(),;
-                  hb_SysCallConv() ), hb_SysLong() }, hRes )
+return hb_DynCall( { "mysql_num_rows", ::pLib, hb_bitOr( ::nSysLong,;
+                  ::nSysCallConv ), ::nSysLong }, hRes )
 
 
 
 
 METHOD mysql_Init() CLASS RDBMS_MySql
 
-RETU hb_DynCall( { "mysql_init", ::pLib, hb_bitOr( hb_SysLong(), hb_SysCallConv() ) }, NULL )
+RETU hb_DynCall( { "mysql_init", ::pLib, hb_bitOr( ::nSysLong, ::nSysCallConv ) }, NULL )
 
 
 
 METHOD mysql_Close() CLASS RDBMS_MySql
 
-RETU hb_DynCall( { "mysql_close", ::pLib, hb_SysCallConv(), hb_SysLong() }, ::hMySQL )
+RETU hb_DynCall( { "mysql_close", ::pLib, ::nSysCallConv, ::nSysLong }, ::hMySQL )
 
 				   
 METHOD mysql_get_server_info() CLASS RDBMS_MySql	
 
 RETU hb_DynCall( { "mysql_get_server_info", ::pLib, hb_bitOr( HB_DYN_CTYPE_CHAR_PTR,;
-                   hb_SysCallConv() ), hb_SysLong() }, ::hMySql )			   
+                   ::nSysCallConv ), ::nSysLong }, ::hMySql )			   
 
 
 				   
@@ -377,8 +534,8 @@ METHOD mysql_real_connect( cServer, cUserName, cPassword, cDataBaseName, nPort )
        nPort = 3306
     endif   
 
-RETU hb_DynCall( { "mysql_real_connect", ::pLib, hb_bitOr( hb_SysLong(),;
-                     hb_SysCallConv() ), hb_SysLong(),;
+RETU hb_DynCall( { "mysql_real_connect", ::pLib, hb_bitOr( ::nSysLong,;
+                     ::nSysCallConv ), ::nSysLong,;
                      HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR,;
                      HB_DYN_CTYPE_LONG, HB_DYN_CTYPE_LONG, HB_DYN_CTYPE_LONG },;
                      ::hMySQL, cServer, cUserName, cPassword, cDataBaseName, nPort, 0, 0 )
@@ -388,7 +545,7 @@ RETU hb_DynCall( { "mysql_real_connect", ::pLib, hb_bitOr( hb_SysLong(),;
 METHOD mysql_error() CLASS RDBMS_MySql	
 
 RETU hb_DynCall( { "mysql_error", ::pLib, hb_bitOr( HB_DYN_CTYPE_CHAR_PTR,;
-                   hb_SysCallConv() ), hb_SysLong() }, ::hMySql )
+                   ::nSysCallConv ), ::nSysLong }, ::hMySql )
 
 				   
 
@@ -401,11 +558,11 @@ METHOD mysql_query( cQuery ) CLASS RDBMS_MySql
 
 	BEGIN SEQUENCE
 		u := hb_DynCall( { "mysql_query", ::pLib, hb_bitOr( HB_DYN_CTYPE_INT,;
-						   hb_SysCallConv() ), hb_SysLong(), HB_DYN_CTYPE_CHAR_PTR },;
+						   ::nSysCallConv ), ::nSysLong, HB_DYN_CTYPE_CHAR_PTR },;
 						   ::hConnection, cQuery )
    
     RECOVER
-      ? "Error" 
+      ap_rputs( ::mysql_error() )
       return nil
     END SEQUENCE
 	
@@ -421,70 +578,79 @@ retu cQuery
 
 /*
 RETU hb_DynCall( { "mysql_real_escape_string", hb_bitOr( HB_DYN_CTYPE_INT,;
-                   hb_SysCallConv() ), hb_SysLong(), HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_LONG, HB_DYN_CTYPE_CHAR_PTR },;
+                   ::nSysCallConv ), ::nSysLong, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_LONG, HB_DYN_CTYPE_CHAR_PTR },;
 				   ::hConnection, @cQuery, cQuery, Len(cQuery), "\'")	
 */
 
 /*
-RETU hb_DynCall( { "mysql_real_escape_string", ::pLib, hb_bitOr( hb_SysLong(),;
-hb_SysCallConv() ), hb_SysLong(), HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_LONG, HB_DYN_CTYPE_CHAR_PTR },;
+RETU hb_DynCall( { "mysql_real_escape_string", ::pLib, hb_bitOr( ::nSysLong,;
+::nSysCallConv ), ::nSysLong, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_CHAR_PTR, HB_DYN_CTYPE_LONG, HB_DYN_CTYPE_CHAR_PTR },;
 ::hConnection, @cQuery, cQuery,  Len(cQuery), "\'")				   
 */				   
 
 
 METHOD mysql_store_result() CLASS RDBMS_MySql	
 
-RETU hb_DynCall( { "mysql_store_result", ::pLib, hb_bitOr( hb_SysLong(),;
-                   hb_SysCallConv() ), hb_SysLong() }, ::hMySQL )
+RETU hb_DynCall( { "mysql_store_result", ::pLib, hb_bitOr( ::nSysLong,;
+                   ::nSysCallConv ), ::nSysLong }, ::hMySQL )
 
 
 
 METHOD mysql_num_fields( hRes ) CLASS RDBMS_MySql	
 
 RETU hb_DynCall( { "mysql_num_fields", ::pLib, hb_bitOr( HB_DYN_CTYPE_LONG_UNSIGNED,;
-                   hb_SysCallConv() ), hb_SysLong() }, hRes )				   
+                   ::nSysCallConv ), ::nSysLong }, hRes )				   
 				   
 				   
 METHOD mysql_fetch_field( hRes ) CLASS RDBMS_MySql	
 
-RETU hb_DynCall( { "mysql_fetch_field", ::pLib, hb_bitOr( hb_SysLong(),;
-                   hb_SysCallConv() ), hb_SysLong() }, hRes )	
+RETU hb_DynCall( { "mysql_fetch_field", ::pLib, hb_bitOr( ::nSysLong,;
+                   ::nSysCallConv ), ::nSysLong }, hRes )	
 				   
 
 	   
 METHOD mysql_fetch_row( hRes ) CLASS RDBMS_MySql	
 
-RETU hb_DynCall( { "mysql_fetch_row", ::pLib, hb_bitOr( hb_SysLong(),;
-                   hb_SysCallConv() ), hb_SysLong() }, hRes )	  
+RETU hb_DynCall( { "mysql_fetch_row", ::pLib, hb_bitOr( ::nSysLong,;
+                   ::nSysCallConv ), ::nSysLong }, hRes )	  
 
 
 
 METHOD mysql_free_result( hRes ) CLASS RDBMS_MySql	
 
 RETU hb_DynCall( { "mysql_free_result", ::pLib,;
-                   hb_SysCallConv(), hb_SysLong() }, hRes )
-				   
-				   
+                   ::nSysCallConv, ::nSysLong }, hRes )
 
 
-
-				   
-				   
 METHOD Exit() CLASS RDBMS_MySql
 
     IF ValType( ::pLib ) == "P"
 	
 		//? "MySQL library properly freed: ", HB_LibFree( ::pLib )
 		
-		? 'Exit MEthod ', ::pLib, ::hMySql
+		//? 'Exit Method ', ::pLib, ::hMySql
 		::MySql_Close()
 		
 		HB_LibFree( ::pLib )
 		
-		? 'Exit MEthod 2', ::pLib, ::hMySql
+		::pLib := NIL
+		::hMySql := NIL
+		
+		//? 'Exit Method 2', ::pLib, ::hMySql
     ENDIF 
 	
 RETU NIL
+
+
+//	------------------------------------------------------------
+
+METHOD d( c ) CLASS RDBMS_MySql
+
+	hb_default( @c, '' )
+	
+	WAPI_OUTPUTDEBUGSTRING( valtochar(c) + chr(13) + chr(10) )
+	
+retu nil 
 
 
 //	------------------------------------------------------------
@@ -583,3 +749,33 @@ function hb_SysMariaDb()
    endif
 
 return cLibName 
+
+function hb_addslashes( c )
+
+	c := StrTran( c, '\', '\\' )
+	c := StrTran( c, "'", "\'" )
+	c := StrTran( c, '"', '\"' )
+	
+	//	Pending byte NULL
+	
+retu c	
+
+function hb_htmlencode( cString )
+
+   local cChar, cRet := "" 
+
+   for each cChar in cString
+		do case
+			case cChar == "<"	; cChar := "&lt;"
+			case cChar == '>'	; cChar := "&gt;"     				
+			case cChar == "&"	; cChar := "&amp;"     
+			case cChar == '"'	; cChar := "&quot;" 
+			case cChar == "'"	; cChar := "&apos;"   			          
+		endcase
+		
+		cRet += cChar 
+   next
+	
+RETURN cRet
+
+
