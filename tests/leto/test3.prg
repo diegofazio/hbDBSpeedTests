@@ -1,3 +1,4 @@
+REQUEST HB_MEMIO
 FUNCTION Main()
 
    LOCAL cIp := "127.0.0.1"
