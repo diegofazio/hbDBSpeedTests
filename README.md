@@ -37,17 +37,17 @@ Harbour DB speed tests comparison - Registers Count: 821051
 ### Test1 - Simple record count with one search criteria - Result: 594060 regs
 | DBF    | LetoDB | Mysql  |
 | ------ | ------ | ------ |
-|  246   |  467   |  152   |
+|  219   |  467   |  152   |
 
 ### Test2 - Search and retrieve data that match a criteria by date - Result: 39354 regs
 | DBF    | LetoDB | Mysql  |
 | ------ | ------ | ------ |
-| 1277   |  800   | 1844   |
+| 475    |  800   | 1844   |
 
 ### Test3 - Search and retrieve a specific and unique data in the db - Result: 1reg
 | DBF    | LetoDB | Mysql  |
 | ------ | ------ | ------ |
-|  337   |  705   |  148   |
+|  301   |  705   |  148   |
 
 
 
