@@ -7,8 +7,8 @@ FUNCTION Main()
    LOCAL nCount := 0
    LOCAL dDesde := 0d20040101
    LOCAL dHasta := 0d20041231
-   LOCAL hRes := { => }
-   LOCAL recordset := {}
+   LOCAL aRecordSet := {}
+   LOCAL aRecord := Array( 13 )
    LOCAL a
    
    ? "Connecting DBF..."
@@ -30,20 +30,21 @@ FUNCTION Main()
    dbSeek( '31415926', .F. )
 
    IF Found()
-      hRes := { => }
-      hRes[ 'KAR_RUBRO' ] := KAR_RUBRO
-      hRes[ 'KAR_FECHA' ] := KAR_FECHA
-      hRes[ 'KAR_CLIE'  ] := KAR_CLIE
-      hRes[ 'KAR_TIPO'  ] := KAR_TIPO
-      hRes[ 'KAR_NUMERO' ] := KAR_NUMERO
-      hRes[ 'KAR_DEPO'  ] := KAR_DEPO
-      hRes[ 'KAR_CANT'  ] := KAR_CANT
-      hRes[ 'KAR_PRECIO' ] := KAR_PRECIO
-      hRes[ 'KAR_DESCTO' ] := KAR_DESCTO
-      hRes[ 'KAR_VENDED' ] := KAR_VENDED
-      hRes[ 'KAR_PIEZAS' ] := KAR_PIEZAS
-      hRes[ 'KAR_ENTSAL' ] := KAR_ENTSAL
-      hRes[ 'KAR_ARTIC' ] := KAR_ARTIC
+
+      aRecord[ 1 ]  := KAR_RUBRO
+      aRecord[ 2 ]  := KAR_FECHA
+      aRecord[ 3 ]  := KAR_CLIE
+      aRecord[ 4 ]  := KAR_TIPO
+      aRecord[ 5 ]  := KAR_NUMERO
+      aRecord[ 6 ]  := KAR_DEPO
+      aRecord[ 7 ]  := KAR_CANT
+      aRecord[ 8 ]  := KAR_PRECIO
+      aRecord[ 9 ]  := KAR_DESCTO
+      aRecord[ 10 ] := KAR_VENDED
+      aRecord[ 11 ] := KAR_PIEZAS
+      aRecord[ 12 ] := KAR_ENTSAL
+      aRecord[ 13 ] := KAR_ARTIC
+      AAdd( aRecordSet, aRecord )
 
       ?? 'OK'
 
@@ -53,7 +54,9 @@ FUNCTION Main()
 
    END IF
 
+   ?? 'OK'
    ? "Total time:", hb_MilliSeconds() - a, "ms"
-   ? "Result: ", KAR_NUMERO
+   ? "Result: ", Len( aRecordSet )
+   ? "Record: ", KAR_NUMERO
    
 RETURN NIL
