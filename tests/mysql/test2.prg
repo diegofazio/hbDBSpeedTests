@@ -20,7 +20,7 @@ FUNCTION Main()
 
    ? "Getting data..."
    a =  hb_MilliSeconds()
-   hRes := o:Query( "select * from db where KAR_FECHA BETWEEN '2004-01-01' and '2004-12-31'" )
+   hRes := o:Query( "select * from db where KAR_FECHA BETWEEN '2004-01-01' and '2004-12-31' ORDER BY KAR_FECHA ASC" )
    aData := o:FetchAll( hRes )
    //ALTER TABLE `db` ADD INDEX `index1` (`KAR_FECHA`)
    //DROP INDEX `index1` ON db
