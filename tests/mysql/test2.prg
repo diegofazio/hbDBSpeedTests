@@ -7,7 +7,8 @@ FUNCTION Main()
    ? "Connecting MySQL..."
    a =  hb_MilliSeconds()
    o := WDO():Rdbms( 'MYSQL', "localhost", "harbour", "", "harbourdb", 3306 )
-
+   o:lWeb := .F.
+   
    IF !o:lConnect
 
       ? o:cError
@@ -21,6 +22,9 @@ FUNCTION Main()
    a =  hb_MilliSeconds()
    hRes := o:Query( "select * from db where KAR_FECHA BETWEEN '2004-01-01' and '2004-12-31'" )
    aData := o:FetchAll( hRes )
+   //ALTER TABLE `db` ADD INDEX `index1` (`KAR_FECHA`)
+   //DROP INDEX `index1` ON db
+
 
    ?? 'OK'
    ? "Total time:", hb_MilliSeconds() - a, "ms"

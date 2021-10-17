@@ -1,6 +1,6 @@
 /*	---------------------------------------------------------
 	File.......: rdbms_mysql.prg
-	Description: Conexiï¿½n a Bases de Datos MySql 
+	Description: Conexión a Bases de Datos MySql 
 	Author.....: Carles Aubia Floresvi
 	Date:......: 26/07/2019
 	--------------------------------------------------------- */
@@ -24,6 +24,7 @@ CLASS RDBMS_MySql FROM RDBMS
 	
 	DATA lConnect								INIT .F.
 	DATA lLog									INIT .F.
+	DATA lWeb									INIT .T.
 	DATA nAffected_Rows						INIT 0
 	DATA cError 								INIT ''
 	DATA aFields 								INIT {}
@@ -32,6 +33,7 @@ CLASS RDBMS_MySql FROM RDBMS
 	DATA nFields								INIT 0
 	DATA nSysCallConv
 	DATA nSysLong
+	DATA nTypePos
 	
 	METHOD New() 								CONSTRUCTOR
 		
@@ -142,6 +144,7 @@ METHOD New( cServer, cUsername, cPassword, cDatabase, nPort, cType, lLog, bError
 	
 		::nSysCallConv 	:= hb_SysCallConv()
 		::nSysLong 		:= hb_SysLong()
+		::nTypePos 		:= hb_SysMyTypePos()
 
 	
 	//	Inicializamos mysql
@@ -362,17 +365,17 @@ METHOD LoadStruct( hRes ) CLASS RDBMS_MySql
 			::aFields[ n ] = Array( 4 )
             ::aFields[ n ][ 1 ] = PtrToStr( hField, 0 )
 			
-            do case
-               case AScan( { 253, 254, 12 }, PtrToUI( hField, hb_SysMyTypePos() ) ) != 0
+            do case              
+               case AScan( { 253, 254, 12 }, PtrToUI( hField, ::nTypePos ) ) != 0
                     ::aFields[ n ][ 2 ] = "C"
 
-               case AScan( { 1, 3, 4, 5, 8, 9, 246 }, PtrToUI( hField, hb_SysMyTypePos() ) ) != 0
+               case AScan( { 1, 3, 4, 5, 8, 9, 246 }, PtrToUI( hField, ::nTypePos ) ) != 0
                     ::aFields[ n ][ 2 ] = "N"
 
-               case AScan( { 10 }, PtrToUI( hField, hb_SysMyTypePos() ) ) != 0
+               case AScan( { 10 }, PtrToUI( hField, ::nTypePos ) ) != 0
                     ::aFields[ n ][ 2 ] = "D"
 
-               case AScan( { 250, 252 }, PtrToUI( hField, hb_SysMyTypePos() ) ) != 0
+               case AScan( { 250, 252 }, PtrToUI( hField, ::nTypePos ) ) != 0
                     ::aFields[ n ][ 2 ] = "M"
             endcase 
 			
@@ -397,20 +400,45 @@ METHOD Fetch( hRes, aNoEscape ) CLASS RDBMS_MySql
 	
 		if len( aNoEscape ) == 0 
 		
-			for m = 1 to ::nFields	
-				aReg[ m ] := hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )				
-			next			
+			if ::lWeb
+			
+				for m = 1 to ::nFields	
+					aReg[ m ] := hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )														
+				next
+				
+			else 
+			
+				for m = 1 to ::nFields					
+					aReg[ m ] := PtrToStr( hRow, m - 1 ) 
+				next				
+			
+			endif
 		
 		else 
 		
-			for m = 1 to ::nFields
+			if ::lWeb
+		
+				for m = 1 to ::nFields
+				
+					if Ascan( aNoEscape, ::aFields[m][1] ) > 0
+						aReg[ m ] := PtrToStr( hRow, m - 1 ) 
+					else
+						aReg[ m ] := hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )
+					endif
+				next
 			
-				if Ascan( aNoEscape, ::aFields[m][1] ) > 0
-					aReg[ m ] := PtrToStr( hRow, m - 1 ) 
-				else
-					aReg[ m ] := hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )
-				endif
-			next
+			else 
+			
+				for m = 1 to ::nFields
+				
+					if Ascan( aNoEscape, ::aFields[m][1] ) > 0
+						aReg[ m ] := PtrToStr( hRow, m - 1 ) 
+					else
+						aReg[ m ] := PtrToStr( hRow, m - 1 )
+					endif
+				next						
+			
+			endif 
 		
 		endif
 		
@@ -432,16 +460,22 @@ METHOD Fetch_Assoc( hRes, aNoEscape ) CLASS RDBMS_MySql
 	hb_default( @aNoEscape, {} )
 	
 	if ( hRow := ::mysql_fetch_row( hRes ) ) != 0
-	
-		//f := ::FCount( hRes )
 		
-		if len( aNoEscape ) == 0 	
+		if len( aNoEscape ) == 0 
 
-			for m = 1 to ::nFields	
-				
-				hReg[ ::aFields[m][1] ] :=  hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )
+			if ::lWeb		
+
+				for m = 1 to ::nFields					
+					hReg[ ::aFields[m][1] ] :=  hb_HtmlEncode( PtrToStr( hRow, m - 1 ) )			
+				next	
+
+			else
 			
-			next				
+				for m = 1 to ::nFields					
+					hReg[ ::aFields[m][1] ] :=  PtrToStr( hRow, m - 1 ) 
+				next				
+			
+			endif
 
 		else 
 			
