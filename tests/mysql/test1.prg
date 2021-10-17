@@ -7,7 +7,8 @@ FUNCTION Main()
    ? "Connecting MySQL..."
    a =  hb_MilliSeconds()
    o := WDO():Rdbms( 'MYSQL', "localhost", "harbour", "", "harbourdb", 3306 )
-
+   o:lWeb := .F.
+   
    IF !o:lConnect
 
       ? o:cError
