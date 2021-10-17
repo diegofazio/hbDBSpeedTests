@@ -4,11 +4,10 @@ REQUEST HB_MEMIO
 FUNCTION Main()
 
    LOCAL cPathData := 'c:\bases\dbf\'
-   LOCAL nCount := 0
    LOCAL dDesde := 0d20040101
    LOCAL dHasta := 0d20041231
-   LOCAL hRes := { => }
-   LOCAL recordset := {}
+   LOCAL aRecordSet := {}
+   LOCAL aRecord := Array( 13 )
    LOCAL a
 
    ? "Connecting DBF..."
@@ -17,11 +16,11 @@ FUNCTION Main()
    dbSelectArea( 1 )
    dbUseArea( .F., "DBFCDX", cPathData + 'db.dbf',, .T. )
 
-   if neterr()
+   IF NetErr()
       ?? "Error open DBF"
-   endif
+   ENDIF
 
-   ?? 'OK ', hb_MilliSeconds() - a, 'ms' 
+   ?? 'OK ', hb_MilliSeconds() - a, 'ms'
    ? "Getting data..."
    a =  hb_MilliSeconds()
 
@@ -33,27 +32,26 @@ FUNCTION Main()
 
    DO WHILE !Eof()
 
-      hRes := { => }
-      hRes[ 'ID' ] := RecNo()
-      hRes[ 'KAR_RUBRO' ] := KAR_RUBRO
-      hRes[ 'KAR_FECHA' ] := KAR_FECHA
-      hRes[ 'KAR_CLIE'  ] := KAR_CLIE 
-      hRes[ 'KAR_TIPO'  ] := KAR_TIPO 
-      hRes[ 'KAR_NUMERO'] := KAR_NUMERO
-      hRes[ 'KAR_DEPO'  ] := KAR_DEPO 
-      hRes[ 'KAR_CANT'  ] := KAR_CANT 
-      hRes[ 'KAR_PRECIO'] := KAR_PRECIO
-      hRes[ 'KAR_DESCTO'] := KAR_DESCTO
-      hRes[ 'KAR_VENDED'] := KAR_VENDED
-      hRes[ 'KAR_PIEZAS'] := KAR_PIEZAS
-      hRes[ 'KAR_ENTSAL'] := KAR_ENTSAL
-      hRes[ 'KAR_ARTIC' ] := KAR_ARTIC
-      AAdd( recordset, hRes )
+      aRecord[ 1 ]  := KAR_RUBRO
+      aRecord[ 2 ]  := KAR_FECHA
+      aRecord[ 3 ]  := KAR_CLIE
+      aRecord[ 4 ]  := KAR_TIPO
+      aRecord[ 5 ]  := KAR_NUMERO
+      aRecord[ 6 ]  := KAR_DEPO
+      aRecord[ 7 ]  := KAR_CANT
+      aRecord[ 8 ]  := KAR_PRECIO
+      aRecord[ 9 ]  := KAR_DESCTO
+      aRecord[ 10 ] := KAR_VENDED
+      aRecord[ 11 ] := KAR_PIEZAS
+      aRecord[ 12 ] := KAR_ENTSAL
+      aRecord[ 13 ] := KAR_ARTIC
+      AAdd( aRecordSet, aRecord )
       dbSkip()
 
    ENDDO
+
    ?? 'OK'
    ? "Total time:", hb_MilliSeconds() - a, "ms"
-   ? "Result: ", len(recordset)
+   ? "Result: ", Len( aRecordSet )
 
 RETURN NIL
