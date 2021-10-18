@@ -30,6 +30,5 @@ FUNCTION Main()
    ? "Total time:", hb_MilliSeconds() - a, "ms"
    ? "Result: ", Len( aData )
    ? "Result: ", o:Count( hRes )
-   hb_memowrit("test.txt", valtochar( aData ))
 
 RETURN NIL
