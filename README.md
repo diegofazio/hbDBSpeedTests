@@ -39,10 +39,10 @@ Harbour DB speed tests comparison - Registers Count: 821051
 | ------ | ------ | ------ |
 |  219   |  467   |  152   |
 
-### Test2 - Search and retrieve data(sorted) that match a criteria by date - Result: 39354 regs
+### Test2 - Search and retrieve data(sorted by KAR_NUMERO) that match a criteria by date - Result: 39354 regs
 | DBF    | LetoDB | Mysql  |
 | ------ | ------ | ------ |
-| 432    |  701   | 424    |
+| 534    |  701   | 424    |
 
 ### Test3 - Search and retrieve a specific and unique data in the db - Result: 1reg
 | DBF    | LetoDB | Mysql  |
