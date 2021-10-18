@@ -7,7 +7,7 @@ FUNCTION Main()
    LOCAL dDesde := 0d20040101
    LOCAL dHasta := 0d20041231
    LOCAL aRecordSet := {}
-   LOCAL aRecord := Array( 13 )
+   LOCAL aRecord 
    LOCAL a
 
    ? "Connecting DBF..."
@@ -31,7 +31,8 @@ FUNCTION Main()
    dbGoTop()
 
    DO WHILE !Eof()
-
+   
+      aRecord       := Array( 13 )
       aRecord[ 1 ]  := KAR_RUBRO
       aRecord[ 2 ]  := KAR_FECHA
       aRecord[ 3 ]  := KAR_CLIE
