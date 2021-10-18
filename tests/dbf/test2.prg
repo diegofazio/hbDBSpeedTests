@@ -1,25 +1,25 @@
-REQUEST DBFCDX
 REQUEST HB_MEMIO
-
 FUNCTION Main()
 
-   LOCAL cPathData := 'c:\bases\dbf\'
+   LOCAL cIp := "127.0.0.1"
+   LOCAL cPort := "2812"
+   LOCAL cPathData := '//' + cIp + ":" + cPort + "/"
    LOCAL dDesde := 0d20040101
    LOCAL dHasta := 0d20041231
    LOCAL aRecordSet := {}
-   LOCAL aRecord 
+   LOCAL aRecord := Array( 13 )
    LOCAL a
 
    ? "Connecting DBF..."
    a =  hb_MilliSeconds()
 
-   dbSelectArea( 1 )
-   dbUseArea( .F., "DBFCDX", cPathData + 'db.dbf',, .T. )
-
-   IF NetErr()
-      ?? "Error open DBF"
+   IF ( leto_Connect( "//" + cIp + ":" + cPort + "/" ) ) == -1
+      ?? "Server not found"
+      QUIT
    ENDIF
 
+   dbSelectArea( 1 )
+   dbUseArea( .F., "LETO", cPathData + 'dbf/db.dbf',, .T. )
    ?? 'OK ', hb_MilliSeconds() - a, 'ms'
    ? "Getting data..."
    a =  hb_MilliSeconds()
@@ -31,8 +31,8 @@ FUNCTION Main()
    dbGoTop()
 
    DO WHILE !Eof()
-   
-      aRecord       := Array( 13 )
+
+      aRecord := Array( 13 )
       aRecord[ 1 ]  := KAR_RUBRO
       aRecord[ 2 ]  := KAR_FECHA
       aRecord[ 3 ]  := KAR_CLIE
@@ -50,6 +50,8 @@ FUNCTION Main()
       dbSkip()
 
    ENDDO
+
+   aRecordSet := ASort( aRecordSet,,, { |x,y| y[5] > x[5] } )
 
    ?? 'OK'
    ? "Total time:", hb_MilliSeconds() - a, "ms"
