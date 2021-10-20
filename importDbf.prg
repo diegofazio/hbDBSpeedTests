@@ -5,13 +5,16 @@ FUNCTION Main()
    hb_SetEnv( 'WDO_PATH_MYSQL', "c:/xampp/apache/bin/" )
 
    ? "Connecting DBF..."
-
+   a =  hb_MilliSeconds()
+   
    dbSelectArea( 1 )
    dbUseArea( .F., "DBFCDX", './data/dbf/db.dbf',, .T. )
 
-   ?? 'OK'
+   ?? 'OK ', hb_MilliSeconds() - a, 'ms' 
+   
    ? "Connecting MySQL..."
-
+   a =  hb_MilliSeconds()
+   
    o := WDO():Rdbms( 'MYSQL', "localhost", "harbour", "", "harbourdb", 3306 )
 
    IF !o:lConnect
@@ -21,11 +24,13 @@ FUNCTION Main()
 
    ENDIF
 
-   ?? 'OK'
+   ?? 'OK ', hb_MilliSeconds() - a, 'ms' 
+   
    dbGoTop()
 
    ? "Importing DBF..."
-
+   a =  hb_MilliSeconds()
+   
    DO WHILE !Eof()
 
       cSql := 'INSERT INTO db (KAR_RUBRO,KAR_FECHA,KAR_CLIE,KAR_TIPO,KAR_NUMERO,'
@@ -50,13 +55,21 @@ FUNCTION Main()
 
    END DO
 
-   ?? 'OK'
-
+   ?? 'OK '
+   ? "Total Importing time:" , hb_MilliSeconds() - a, "ms"
+ 
+   ? "Counting records with 'Select * from db' "
+   a =  hb_MilliSeconds()
+   
    IF !Empty( hRes := o:Query( "select * from db " ) )
 
       ? 'Count(): ', o:Count( hRes )
-      ? 'Fields: ',  o:FCount( hRes )
+      ? "Total Counting time:" , hb_MilliSeconds() - a, "ms"
+
+   ELSE
+
+      ? "ERROR"
 
    ENDIF
 
-RETU NIL
+RETURN NIL
