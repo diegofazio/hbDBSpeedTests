@@ -53,6 +53,6 @@ Harbour DB speed tests comparison - Registers Count: 821051
 
 | Mysql(WDO)  | Mysql(HDO)  |
 | ----------- | ----------- |
-|  109146     |  126127     |
+|  109146     |  82928      |
 
 
