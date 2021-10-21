@@ -11,8 +11,12 @@ REQUEST DBFCDX
 
 FUNCTION Main()
 
-   LOCAL o, oStmt, oRS, cSql, a
+   LOCAL o, oStmt, cSql, a, oRS
    local KAR_RUBRO, KAR_FECHA, KAR_CLIE, KAR_TIPO, KAR_NUMERO, KAR_DEPO, KAR_CANT, KAR_PRECIO, KAR_DESCTO, KAR_VENDED, KAR_PIEZAS, KAR_ENTSAL, KAR_ARTIC
+
+   cls 
+   ? "Test 2: Importacion desde una dbf"
+   ?
 
    ? "Connecting DBF..."
    a =  hb_MilliSeconds()
@@ -44,7 +48,6 @@ FUNCTION Main()
    cSql += 'KAR_ENTSAL,KAR_ARTIC ) VALUES ( ?, ? ,?, ?, ?, ? ,?, ?, ?, ?, ?, ?, ? )'
 
    oStmt := o:prepare( cSql )
-
    
    oStmt:bindParam( 1, @KAR_RUBRO ) 
    oStmt:bindParam( 2, @KAR_FECHA )
@@ -95,12 +98,16 @@ FUNCTION Main()
 
    ? "Counting records with 'SELECT * FROM db' "
    a =  hb_MilliSeconds()
-  
    oRS := o:rowSet( "SELECT * FROM db" )
    oRS:load()
 
    ? 'Count(): ', oRS:rowCount()
    ? "Total Counting time:" , hb_MilliSeconds() - a, "ms"
+
+   ?
+   ?
+   ? "Presiona ENTER para salir..."
+   inkey( 100 )
 
    oRS:free()
    o:free()
