@@ -56,7 +56,7 @@ Harbour DB speed tests comparison - Registers Count: 821051
 |  109146     |  82928      |
 
 
-## LAN TEST( in milliseconds )
+## LAN( gigabit ) TEST( in milliseconds )
 
 ### Connection time to db
 | DBF    | LetoDB | Mysql(WDO)  | Mysql(HDO)  |
