@@ -1,9 +1,8 @@
+REQUEST DBFCDX
 REQUEST HB_MEMIO
 FUNCTION Main()
 
-   LOCAL cIp := "127.0.0.1"
-   LOCAL cPort := "2812"
-   LOCAL cPathData := '//' + cIp + ":" + cPort + "/"
+   LOCAL cPathData := 'c:\bases\dbf\'
    LOCAL dDesde := 0d20040101
    LOCAL dHasta := 0d20041231
    LOCAL aRecordSet := {}
@@ -13,13 +12,13 @@ FUNCTION Main()
    ? "Connecting DBF..."
    a =  hb_MilliSeconds()
 
-   IF ( leto_Connect( "//" + cIp + ":" + cPort + "/" ) ) == -1
-      ?? "Server not found"
-      QUIT
-   ENDIF
-
    dbSelectArea( 1 )
-   dbUseArea( .F., "LETO", cPathData + 'dbf/db.dbf',, .T. )
+   dbUseArea( .F., "DBFCDX", cPathData + 'db.dbf',, .T. )
+
+   if neterr()
+      ?? "Error open DBF"
+   endif
+
    ?? 'OK ', hb_MilliSeconds() - a, 'ms'
    ? "Getting data..."
    a =  hb_MilliSeconds()

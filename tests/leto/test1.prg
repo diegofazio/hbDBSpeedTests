@@ -7,7 +7,7 @@ FUNCTION Main()
    LOCAL nCount := 0
    LOCAL a
 
-   ? "Connecting DBF..."
+   ? "Connecting DBF VIA LETO..."
    a =  hb_MilliSeconds()
    
    IF ( leto_Connect( "//" + cIp + ":" + cPort + "/" ) ) == -1
