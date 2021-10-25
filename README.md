@@ -56,3 +56,32 @@ Harbour DB speed tests comparison - Registers Count: 821051
 |  109146     |  82928      |
 
 
+## LAN TEST( in milliseconds )
+
+### Connection time to db
+| DBF    | LetoDB | Mysql(WDO)  | Mysql(HDO)  |
+| ------ | ------ | ----------- | ----------- |
+|    5   |    3   |   24        |             |
+
+### Test1 - Simple record count with one search criteria - Result: 594060 regs
+| DBF    | LetoDB | Mysql(WDO)  | Mysql(HDO)  |
+| ------ | ------ | ----------- | ----------- |
+|   181  |   527  |  213        |             |
+
+### Test2 - Search and retrieve data(sorted by KAR_NUMERO) that match a criteria by date - Result: 39354 regs
+| DBF    | LetoDB | Mysql(WDO)  | Mysql(HDO)  |
+| ------ | ------ | ----------- | ----------- |
+|   415  |  2464  |  476        |             |
+
+### Test3 - Search and retrieve a specific and unique data in the db - Result: 1reg
+| DBF    | LetoDB | Mysql(WDO)  | Mysql(HDO)  |
+| ------ | ------ | ----------- | ----------- |
+|   264  |   817  |  213        |             |
+
+### ImportDbf(DBF->mySql) - import DBF file with 821051 regs 
+
+| Mysql(WDO)  | Mysql(HDO)  |
+| ----------- | ----------- |
+|    3199859  |             |
+
+
