@@ -78,10 +78,10 @@ Harbour DB speed tests comparison - Registers Count: 821051
 | ---------- | ------ | ----------- | ----------- |
 |     264    |   817  |  213        |      193    |
 
-### ImportDbf_lan(DBF->mySql) - import DBF file with 821051 regs 
+### ImportDbf_lan(DBF->mySql) - import DBF file(in Client) with 821051 regs 
 
 | Mysql(WDO)  | Mysql(HDO)  |
 | ----------- | ----------- |
-|      51893  |   3195902   |
+|      51893  |     20548   |
 
 
