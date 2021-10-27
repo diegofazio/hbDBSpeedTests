@@ -8,12 +8,14 @@ REQUEST RDLMYSQLN   // Importante: solicitud para enlazar la RDL usada
 
 //------------------------------------------------------------------------------
 
-FUNCTION Main()
+FUNCTION Main( cServer )
 
    LOCAL o, a, aData
 
+   cServer := if( empty( cServer  ), "localhost", AllTrim( cServer ) )
+
    cls
-   ? "Ejecutando Test2d"
+   ? "Ejecutando Test2 HDO"
    ?
 
    o := THDO():new( HDO_RDL_MYSQL_NATIVE )
@@ -21,8 +23,8 @@ FUNCTION Main()
    ? "Connecting MySQL..."
    a =  hb_MilliSeconds()
      
-   IF !o:connect( "harbourdb", "localhost", "harbour", "" )
-      ? o:cError
+   IF !o:connect( "harbourdb", cServer, "harbour", "", 3306 )
+      ? o:errorStr()
       o:free()
       QUIT
    ENDIF
@@ -39,8 +41,7 @@ FUNCTION Main()
    ?? 'OK'
    ? "Total time:", hb_MilliSeconds() - a, "ms"
    ? "Result: ", Len( aData )
-   //? "Result: ", o:Count( hRes )
 
    o:free()
-
+   
 RETURN NIL

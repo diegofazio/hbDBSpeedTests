@@ -9,13 +9,15 @@ REQUEST DBFCDX
 
 //------------------------------------------------------------------------------
 
-FUNCTION Main()
+FUNCTION Main( cServer )
 
    LOCAL o, oStmt, cSql, a, oRS
    local KAR_RUBRO, KAR_FECHA, KAR_CLIE, KAR_TIPO, KAR_NUMERO, KAR_DEPO, KAR_CANT, KAR_PRECIO, KAR_DESCTO, KAR_VENDED, KAR_PIEZAS, KAR_ENTSAL, KAR_ARTIC
 
+   cServer := if( empty( cServer  ), "localhost", AllTrim( cServer ) )
+
    cls 
-   ? "Test 2: Importacion desde una dbf"
+   ? "Importacion desde una dbf, usando variables unidas (bind)"
    ?
 
    ? "Connecting DBF..."
@@ -31,8 +33,8 @@ FUNCTION Main()
    ? "Connecting MySQL..."
    a =  hb_MilliSeconds()
    
-   IF !o:connect( "harbourdb", "localhost", "harbour", "" )
-      ? o:cError
+   IF !o:connect( "harbourdb", cServer, "harbour", "", 3306 )
+      o:errorStr()
       o:free()
       QUIT
    ENDIF
@@ -63,33 +65,29 @@ FUNCTION Main()
    oStmt:bindParam( 12, @KAR_ENTSAL ) 
    oStmt:bindParam( 13, @KAR_ARTIC )  
 
-   o:beginTransaction()
-
    a =  hb_MilliSeconds()
 
-    DO WHILE !Eof()
+   DO WHILE !Eof()
 
-        KAR_RUBRO := Field->KAR_RUBRO
-        KAR_FECHA := Field->KAR_FECHA
-        KAR_CLIE := Field->KAR_CLIE
-        KAR_TIPO := Field->KAR_TIPO
-        KAR_NUMERO := Field->KAR_NUMERO
-        KAR_DEPO := Field->KAR_DEPO
-        KAR_CANT := Field->KAR_CANT
-        KAR_PRECIO := Field->KAR_PRECIO
-        KAR_DESCTO := Field->KAR_DESCTO
-        KAR_VENDED := Field->KAR_VENDED
-        KAR_PIEZAS := Field->KAR_PIEZAS
-        KAR_ENTSAL := Field->KAR_ENTSAL
-        KAR_ARTIC := Field->KAR_ARTIC
+      KAR_RUBRO := Field->KAR_RUBRO
+      KAR_FECHA := Field->KAR_FECHA
+      KAR_CLIE := Field->KAR_CLIE
+      KAR_TIPO := Field->KAR_TIPO
+      KAR_NUMERO := Field->KAR_NUMERO
+      KAR_DEPO := Field->KAR_DEPO
+      KAR_CANT := Field->KAR_CANT
+      KAR_PRECIO := Field->KAR_PRECIO
+      KAR_DESCTO := Field->KAR_DESCTO
+      KAR_VENDED := Field->KAR_VENDED
+      KAR_PIEZAS := Field->KAR_PIEZAS
+      KAR_ENTSAL := Field->KAR_ENTSAL
+      KAR_ARTIC := Field->KAR_ARTIC
 
       oStmt:execute()
 
       dbSkip()
 
    END DO
-
-   o:commit()
    
    ?? 'OK '
    ? "Total Importing time:" , hb_MilliSeconds() - a, "ms"
@@ -103,11 +101,6 @@ FUNCTION Main()
 
    ? 'Count(): ', oRS:rowCount()
    ? "Total Counting time:" , hb_MilliSeconds() - a, "ms"
-
-   ?
-   ?
-   ? "Presiona ENTER para salir..."
-   inkey( 100 )
 
    oRS:free()
    o:free()
