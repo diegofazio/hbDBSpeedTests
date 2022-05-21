@@ -19,7 +19,7 @@ FUNCTION Main()
 
    for i = 1 to CONNECTORS
 
-      aO[i] := WDO():Rdbms( 'MYSQL', "192.168.0.9", "harbour", "", "harbourdb", 3306 )
+      aO[i] := WDO():Rdbms( 'MYSQL', "localhost", "harbour", "", "harbourdb", 3306 )
 
       IF !aO[i]:lConnect
          ? aO[i]:cError
